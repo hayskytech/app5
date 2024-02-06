@@ -1,10 +1,10 @@
 import React from 'react'
-import TodosEditable from './comp/TodosEditable'
+import Fruits from './FB/Fruits'
 
 export default function App() {
   return (
     <div>
-      <TodosEditable />
+      <Fruits />
     </div>
   )
 }
