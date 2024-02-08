@@ -12,9 +12,13 @@ export default function Matches() {
   const [time, setTime] = useState('');
   const [place, setPlace] = useState('');
   const [list, setList] = useState([])
+  const [data, setData] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const [delAllBox, setDelAllBox] = useState(false)
+  const [delBox, setDelBox] = useState(false)
 
   function addItem() {
-    if (match === '' || teamA === '' || teamB === '' || date === '' || time === '' || place === '') return
+    // if (match === '' || teamA === '' || teamB === '' || date === '' || time === '' || place === '') return
     const myRef = ref(db, 'matches')
     push(myRef, { match, teamA, teamB, date, time, place })
     closeBox()
@@ -23,9 +27,10 @@ export default function Matches() {
   function getItems() {
     const myRef = ref(db, 'matches')
     onValue(myRef, (snapshot) => {
-      const data = snapshot.val()
-      if (data) {
-        const arr = Object.entries(data)
+      const res = snapshot.val()
+      if (res) {
+        setData(res)
+        const arr = Object.entries(res)
         setList(arr)
       } else {
         setList([])
@@ -40,6 +45,12 @@ export default function Matches() {
   function deleteItem(id) {
     const delRef = ref(db, 'matches/' + id)
     set(delRef, null)
+    setDelBox(false)
+  }
+  function deleteAll() {
+    const delAllRef = ref(db, 'matches/')
+    set(delAllRef, null)
+    setDelAllBox(false)
   }
   function closeBox() {
     setMatch('')
@@ -48,12 +59,88 @@ export default function Matches() {
     setDate('')
     setTime('')
     setPlace('')
+    setEditId(null)
     setBox(false)
+  }
+  function editItem(id) {
+    setBox(true)
+    setEditId(id)
+    setMatch(data[id].match)
+    setTeamA(data[id].teamA);
+    setTeamB(data[id].teamB);
+    setDate(data[id].date);
+    setTime(data[id].time);
+    setPlace(data[id].place);
+  }
+  function saveItem() {
+    const saveRef = ref(db, 'matches/' + editId)
+    set(saveRef, { match, teamA, teamB, date, time, place })
+    setEditId(null)
+    closeBox()
+  }
+  function showDelBox(id) {
+    setEditId(id)
+    setMatch(data[id].match)
+    setTeamA(data[id].teamA);
+    setTeamB(data[id].teamB);
+    setDate(data[id].date);
+    setTime(data[id].time);
+    setPlace(data[id].place);
+    setDelBox(true)
+  }
+  function closeDelBox() {
+    setEditId(null)
+    setDelBox(false)
   }
 
   return (
     <div>
+      {editId}
+
       <Button color='green' onClick={() => setBox(true)}>Add</Button>
+      {/* display delete button only if list has some values */}
+      {list.length > 0 &&
+        <Button color='red' onClick={() => setDelAllBox(true)}>Delete All</Button>
+      }
+
+      {/* Delete All Confirmation box */}
+      <Modal
+        size='mini'
+        open={delAllBox}
+        onOpen={() => setDelAllBox(true)}
+        onClose={() => setDelAllBox(false)}
+        closeIcon
+      >
+        <Modal.Header>Delete All?</Modal.Header>
+        <Modal.Actions>
+          <Button color='red' onClick={deleteAll}>Delete</Button>
+          <Button color='black' onClick={() => setDelAllBox(false)}>Cancel</Button>
+        </Modal.Actions>
+      </Modal>
+
+      {/* Delete one Confirmation box */}
+      <Modal
+        size='mini'
+        open={delBox}
+        onOpen={() => setDelBox(true)}
+        onClose={() => setDelBox(false)}
+        closeIcon
+      >
+        <Modal.Header>Delete {match}?</Modal.Header>
+        <Modal.Content>
+          <p>TeamA: {teamA}</p>
+          <p>TeamB: {teamB}</p>
+          <p>Date: {date}</p>
+          <p>Time: {time}</p>
+          <p>Place: {place}</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color='red' onClick={() => deleteItem(editId)}>Delete</Button>
+          <Button color='black' onClick={closeDelBox}>Cancel</Button>
+        </Modal.Actions>
+      </Modal>
+
+      {/* Adding box */}
       <Modal
         open={box}
         onOpen={() => setBox(true)}
@@ -61,9 +148,11 @@ export default function Matches() {
         closeIcon
         size='mini'
       >
-        <Modal.Header>Match Details</Modal.Header>
+        <Modal.Header>
+          {editId ? 'Edit match details' : 'Add new match'}
+        </Modal.Header>
         <Modal.Content>
-          <Form onSubmit={addItem}>
+          <Form onSubmit={editId ? saveItem : addItem}>
             <Form.Field>
               <label>Match Name</label>
               <input value={match} onChange={e => setMatch(e.target.value)} />
@@ -88,7 +177,9 @@ export default function Matches() {
               <label>Place</label>
               <input value={place} onChange={e => setPlace(e.target.value)} />
             </Form.Field>
-            <Button type='submit' color='green'>Submit</Button>
+            <Button type='submit' color='green'>
+              {editId ? 'Save Changes' : 'Add'}
+            </Button>
             <Button type='button' color='black' onClick={closeBox}>Cancel</Button>
           </Form>
         </Modal.Content>
@@ -114,11 +205,16 @@ export default function Matches() {
                 <td>{item[1].teamA}</td>
                 <td>{item[1].teamB}</td>
                 <td>{item[1].date}</td>
-                <td>{item[1].time}</td>
+                <td>{convertTimeFormat(item[1].time)}</td>
                 <td>{item[1].place}</td>
                 <td>
-                  <Button size='mini'>Edit</Button>
-                  <Button size='mini' color='red' onClick={() => deleteItem(item[0])}>Delete</Button>
+                  <Button size='mini' color='blue'
+                    onClick={() => editItem(item[0])}
+                  >Edit</Button>
+
+                  <Button size='mini' color='red'
+                    onClick={() => showDelBox(item[0])}
+                  >Delete</Button>
                 </td>
               </tr>
             </>
@@ -134,4 +230,15 @@ export default function Matches() {
 
     </div>
   )
+}
+
+
+function convertTimeFormat(inputTime) {
+  if (!inputTime) {
+    return
+  }
+  const [hour, minute] = inputTime.split(':');
+  const formattedTime = new Date(2022, 1, 1, hour, minute).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  return formattedTime;
 }
