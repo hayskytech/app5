@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Form, Modal } from 'semantic-ui-react'
+import { Button, Form, Message, Modal } from 'semantic-ui-react'
 import { db } from './config';
 import { onValue, push, ref, set } from 'firebase/database';
 
@@ -16,9 +16,13 @@ export default function Matches() {
   const [editId, setEditId] = useState(null)
   const [delAllBox, setDelAllBox] = useState(false)
   const [delBox, setDelBox] = useState(false)
+  const [error, setError] = useState('')
 
   function addItem() {
-    // if (match === '' || teamA === '' || teamB === '' || date === '' || time === '' || place === '') return
+    if (match === '' || teamA === '' || teamB === '' || date === '' || time === '' || place === '') {
+      setError('Please enter all fields')
+      return
+    }
     const myRef = ref(db, 'matches')
     push(myRef, { match, teamA, teamB, date, time, place })
     closeBox()
@@ -59,6 +63,7 @@ export default function Matches() {
     setDate('')
     setTime('')
     setPlace('')
+    setError('')
     setEditId(null)
     setBox(false)
   }
@@ -152,6 +157,7 @@ export default function Matches() {
           {editId ? 'Edit match details' : 'Add new match'}
         </Modal.Header>
         <Modal.Content>
+          {error !== '' && <Message error header={error} />}
           <Form onSubmit={editId ? saveItem : addItem}>
             <Form.Field>
               <label>Match Name</label>
