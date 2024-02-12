@@ -100,7 +100,6 @@ export default function Matches() {
 
   return (
     <div>
-      {editId}
 
       <Button color='green' onClick={() => setBox(true)}>Add</Button>
       {/* display delete button only if list has some values */}
