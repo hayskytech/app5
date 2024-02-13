@@ -4,9 +4,11 @@ import Matches from './FB/Matches'
 import Login from './FB/Login'
 import { auth } from './FB/config'
 import { onAuthStateChanged, onIdTokenChanged, signOut } from 'firebase/auth'
-import { Icon, Menu } from 'semantic-ui-react'
+import { Container, Icon, Menu } from 'semantic-ui-react'
 import Fruits from './FB/Fruits'
 import TodoList from './FB/TodoList'
+import DummyLogin from './FB/DummyLogin'
+import MyProfile from './FB/MyProfile'
 export const MyContext = createContext(null)
 
 export default function App() {
@@ -41,7 +43,7 @@ export default function App() {
   }
 
   function MainMenu() {
-    const items = ['Home', 'Matches', "Fruits", 'TodoList', 'New Paege', "Games"]
+    const items = ['Home', 'Matches', "Fruits", 'TodoList', 'MyProfile', "DummyLogin"]
     return (<Menu icon='labeled' widths={items.length + 1} compact size='mini'>
       {items.map((item) =>
         <Menu.Item name='gamepad'
@@ -72,11 +74,14 @@ export default function App() {
       {user ?
         <MyContext.Provider value={{ user }}>
           <MainMenu />
-          {page === 'Home' && <p>this is home</p>}
-          {page === 'TodoList' && <TodoList />}
-          {page === 'Channels' && <p>this is channels</p>}
-          {page === 'Matches' && <Matches />}
-          {page === 'Fruits' && <Fruits />}
+          <Container>
+            {page === 'Home' && <p>this is home</p>}
+            {page === 'TodoList' && <TodoList />}
+            {page === 'MyProfile' && <MyProfile />}
+            {page === 'DummyLogin' && <DummyLogin />}
+            {page === 'Matches' && <Matches />}
+            {page === 'Fruits' && <Fruits />}
+          </Container>
         </MyContext.Provider>
         :
         <Login />
